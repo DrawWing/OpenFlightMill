@@ -60,11 +60,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_process, SIGNAL(readyReadStandardError()), this, SLOT(readyReadStandardError()));
     connect(m_process, SIGNAL(readyReadStandardOutput()), this, SLOT(readyReadStandardOutput()));
 
-    /////
     QTimer *inactiveTimer = new QTimer(this);
     connect(inactiveTimer, SIGNAL(timeout()), this, SLOT(inactiveTest()));
     inactiveTimer->start(60000); // 60 000 milliseconds = 1 minute
-    /////
 
     // ititialize all rows with invalid data
     for(unsigned i = 0; i < millCount; ++i)
@@ -203,6 +201,7 @@ void MainWindow::readyReadStandardOutput()
         // makr the row as modified
         table->item(theRow,save)->setBackground(Qt::yellow);
 
+        lastTime[unsigned(theRow)] = theTime;
         if(startTime[unsigned(theRow)].isValid())
         {
             table->setItem(theRow, last, new QTableWidgetItem(theTimeStr));
@@ -217,7 +216,6 @@ void MainWindow::readyReadStandardOutput()
             table->setItem(theRow, first, new QTableWidgetItem(theTimeStr));
             startSec[unsigned(theRow)] = seconds;
             startTime[unsigned(theRow)] = theTime;
-            lastTime[unsigned(theRow)] = theTime;
         }
     }
 }
@@ -228,10 +226,11 @@ void MainWindow::inactiveTest()
     QDateTime theTime = QDateTime::currentDateTime();
     for(unsigned i = 0; i < millCount; ++i)
     {
-        int msDiff = startTime[i].msecsTo(theTime);
+        if(!startTime[i].isValid())
+            continue;
+        int msDiff = lastTime[i].msecsTo(theTime);
         if(msDiff > inactiveThd)
             table->item(i,save)->setBackground(Qt::red);
-
     }
 }
 
