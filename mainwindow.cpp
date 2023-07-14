@@ -7,12 +7,13 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QSettings>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     setWindowIcon(QIcon(":/OFMill.png"));
-//    qDebug() << trUtf8("QT version: %1").arg(qVersion());
+//    qDebug() << tr("QT version: %1").arg(qVersion());
     companyName = QCoreApplication::organizationName();
     appName = QCoreApplication::applicationName();
     appVersion = QCoreApplication::applicationVersion();
@@ -58,6 +59,12 @@ MainWindow::MainWindow(QWidget *parent)
     m_process = new QProcess(this);
     connect(m_process, SIGNAL(readyReadStandardError()), this, SLOT(readyReadStandardError()));
     connect(m_process, SIGNAL(readyReadStandardOutput()), this, SLOT(readyReadStandardOutput()));
+
+    /////
+    QTimer *inactiveTimer = new QTimer(this);
+    connect(inactiveTimer, SIGNAL(timeout()), this, SLOT(inactiveTest()));
+    inactiveTimer->start(60000); // 60 000 milliseconds = 1 minute
+    /////
 
     // ititialize all rows with invalid data
     for(unsigned i = 0; i < millCount; ++i)
@@ -128,7 +135,7 @@ void MainWindow::createTable()
     connect(table, SIGNAL( cellClicked(int, int) ),
             this, SLOT( editClicked(int, int) ));
 
-    for(int i = 0; i < millCount; ++i)
+    for(int i = 0; i < int(millCount); ++i)
     {
         table->insertRow(i);
         QString theNumberStr = QString::number(i + 1) ; // row numbering from 1
@@ -142,7 +149,7 @@ void MainWindow::createTable()
 
 void MainWindow::readyReadStandardError()
 {
-    qDebug() << trUtf8("readyReadStandardError()...");
+    qDebug() << tr("readyReadStandardError()...");
     QByteArray buffer = m_process->readAllStandardError();
     qDebug() << buffer;
 
@@ -152,7 +159,7 @@ void MainWindow::readyReadStandardError()
 
 void MainWindow::readyReadStandardOutput()
 {
-    qDebug() << trUtf8("readyReadStandardOutput()...");
+    qDebug() << tr("readyReadStandardOutput()...");
     QByteArray buffer = m_process->readAllStandardOutput();
     qDebug() << buffer;
 
@@ -181,7 +188,6 @@ void MainWindow::readyReadStandardOutput()
             if(timeDif < minTime)
                 return;
         }
-        //        qDebug() << trUtf8("seconds: %1").arg(QString::number(seconds, 'f', 5));
 
         times[theRow].push_back(seconds);
         QString theNumberStr = QString::number(times[theRow].size());
@@ -195,7 +201,7 @@ void MainWindow::readyReadStandardOutput()
         QString theTimeStr = theTime.toString("hh:mm:ss.zzz");
 
         // makr the row as modified
-        table->item(theRow,save)->setBackground(Qt::red);
+        table->item(theRow,save)->setBackground(Qt::yellow);
 
         if(startTime[unsigned(theRow)].isValid())
         {
@@ -213,6 +219,19 @@ void MainWindow::readyReadStandardOutput()
             startTime[unsigned(theRow)] = theTime;
             lastTime[unsigned(theRow)] = theTime;
         }
+    }
+}
+
+// mark rows inactive for inactiveThd ms red
+void MainWindow::inactiveTest()
+{
+    QDateTime theTime = QDateTime::currentDateTime();
+    for(unsigned i = 0; i < millCount; ++i)
+    {
+        int msDiff = startTime[i].msecsTo(theTime);
+        if(msDiff > inactiveThd)
+            table->item(i,save)->setBackground(Qt::red);
+
     }
 }
 
@@ -446,7 +465,7 @@ void MainWindow::about()
     QString aboutTxt(tr(
                          "<p><b>%1 version %2</b></p>"
                          "<p>Author: Adam Tofilski</p>"
-                         "<p>For full functionallity you need specific hardware connected to Raspberry Pi.</p>"
+                         "<p>For full functionality, you need specific hardware connected to the Raspberry Pi.</p>"
                          //                         "<p>Home page: <a href=\"http://drawwing.org/dkey\">drawwing.org/dkey</a></p>"
                          //                         "<p>If you find this software useful please cite it:<br />Tofilski A (2018) DKey software for editing and browsing dichotomous keys. ZooKeys 735: 131-140. <a href=\"https://doi.org/10.3897/zookeys.735.21412\">https://doi.org/10.3897/zookeys.735.21412</a></p>"
                          "<p>This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.</p>"
@@ -491,7 +510,7 @@ bool MainWindow::isModified()
     for(unsigned row = 0; row < millCount; ++row)
     {
         QBrush bgd = table->item(row, save)->background(); //Qt::green
-        if(bgd.color() == Qt::red)
+        if(bgd.color() == Qt::yellow)
             return true;
     }
     return false;
@@ -499,7 +518,7 @@ bool MainWindow::isModified()
 
 void MainWindow::preferences()
 {
-    OFMpreferences * prefDialog = new OFMpreferences(this, this);
+    OFMpreferences * prefDialog = new OFMpreferences(this);
     prefDialog->exec();
     readSettings();
 }
@@ -511,6 +530,7 @@ void MainWindow::readSettings()
     const double PI = 3.141592653589793238463;
     halfLapM = PI * radius * 0.001;
     minTime = settings.value("minTime", 0.1).toDouble();
+    inactiveThd = settings.value("inactiveThd", 3600000).toInt(); // 3600000 ms = 1 hour
     separator = settings.value("separator", ',').toChar();
 }
 
@@ -519,6 +539,7 @@ void MainWindow::writeSettings()
     QSettings settings(companyName, appName);
     settings.setValue("radius", radius);
     settings.setValue("minTime", minTime);
+    settings.setValue("inactiveThd", inactiveThd);
     settings.setValue("separator", separator);
 }
 

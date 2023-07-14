@@ -54,4 +54,4 @@ RESOURCES += \
 DISTFILES += \
     OFMill.png
 
-DEFINES += VERSION_STRING=\\\"1.0.0\\\"
+DEFINES += VERSION_STRING=\\\"1.1.0\\\"

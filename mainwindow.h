@@ -28,6 +28,7 @@ protected:
 private slots:
     void readyReadStandardError();
     void readyReadStandardOutput();
+    void inactiveTest();
     void editClicked(int row, int col=1);
     void txt2data();
     void preferences();
@@ -86,6 +87,7 @@ private:
     int radius;
     double halfLapM; // half lap distance in meters
     double minTime;
+    int inactiveThd;
     QString dataPath;
     QChar separator;
 

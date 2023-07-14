@@ -2,7 +2,7 @@
 #include <QHBoxLayout>
 #include <QSettings>
 
-OFMpreferences::OFMpreferences(MainWindow *inWindow, QWidget *parent)
+OFMpreferences::OFMpreferences(QWidget *parent)
     : QDialog(parent)
 {
     createWidget();
@@ -49,12 +49,24 @@ void OFMpreferences::createWidget()
     minTimeSpin->setMaximum(1.0);
     minTimeSpin->setSingleStep(0.01);
     minTimeSpin->setValue(minTime);
+    minTimeSpin->setSuffix(" seconds");
+
+
+    QLabel *inactiveLabel = new QLabel(tr("Inactivity threshold"));
+    inactiveSpin = new QSpinBox;
+    inactiveSpin->setMinimum(1);
+    inactiveSpin->setMaximum(1440);
+    inactiveSpin->setSingleStep(1);
+    inactiveSpin->setValue(inactiveMin);
+    inactiveSpin->setSuffix(" minutes");
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(radiusLabel);
     mainLayout->addWidget(radiusSpin);
     mainLayout->addWidget(minTimeLabel);
     mainLayout->addWidget(minTimeSpin);
+    mainLayout->addWidget(inactiveLabel);
+    mainLayout->addWidget(inactiveSpin);
     mainLayout->addWidget(separatorBox);
     mainLayout->addLayout(buttonLayout);
     setLayout(mainLayout);
@@ -69,6 +81,7 @@ void OFMpreferences::accept()
 {
     radius = radiusSpin->value();
     minTime = minTimeSpin->value();
+    inactiveMin = inactiveSpin->value();
 
     if(commaRadio->isChecked())
     {
@@ -92,6 +105,8 @@ void OFMpreferences::readSettings()
     QString defaultPath("/home/OpenFlightMill-data");
     radius = settings.value("radius", 150).toInt();
     minTime = settings.value("minTime", 0.1).toDouble();
+    int inactiveThd = settings.value("inactiveThd", 3600000).toInt(); // 3600000 ms = 1 hour
+    inactiveMin = inactiveThd/60000; // convert from miliseconds to minutes
     separator = settings.value("separator", ',').toChar();
 }
 
@@ -103,6 +118,8 @@ void OFMpreferences::writeSettings()
 
     settings.setValue("radius", radius);
     settings.setValue("minTime", minTime);
+    int inactiveThd = inactiveMin * 60000; // convert from minutes to miliseconds
+    settings.setValue("inactiveThd", inactiveThd);
     settings.setValue("separator", separator);
 }
 

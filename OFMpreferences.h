@@ -26,7 +26,7 @@ class OFMpreferences : public QDialog
 {
     Q_OBJECT
 public:
-    OFMpreferences(MainWindow * inWindow, QWidget *parent = 0);
+    OFMpreferences(QWidget *parent = 0);
 
 protected:
     void accept();
@@ -39,6 +39,7 @@ private:
     QRadioButton *commaRadio;
     QRadioButton *semicolonRadio;
     QSpinBox *radiusSpin;
+    QSpinBox *inactiveSpin;
     QDoubleSpinBox *minTimeSpin;
 
     QPushButton *okButton;
@@ -48,6 +49,7 @@ private:
 
     // preferences
     int radius;
+    int inactiveMin;
     double minTime;
     QChar separator;
 };
